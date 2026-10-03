@@ -1,0 +1,26 @@
+# Dependencies and test output
+node_modules/
+test-results.xml
+coverage/
+
+# Terraform: state can contain secrets, so never commit it
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+terraform.tfvars
+*.auto.tfvars
+# Commit the lock file so provider versions stay pinned
+!.terraform.lock.hcl
+
+# Environment, keys and secrets
+.env
+.env.*
+*.pem
+*.key
+
+# OS and editor files
+.DS_Store
+.vscode/
+.idea/
+*.log

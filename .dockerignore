@@ -1,0 +1,11 @@
+.git
+node_modules
+test
+docs
+terraform
+scripts
+Jenkinsfile
+*.md
+test-results.xml
+*.tfstate*
+.terraform

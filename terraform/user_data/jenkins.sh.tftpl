@@ -1,0 +1,61 @@
+#!/bin/bash
+# Bootstraps the Jenkins server on first boot. Log: /var/log/user-data.log
+set -euo pipefail
+exec > >(tee /var/log/user-data.log) 2>&1
+export DEBIAN_FRONTEND=noninteractive
+
+echo "==> Adding swap (Jenkins needs it on small instances)"
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+echo "==> Installing Java 21, Git, Docker and tools"
+apt-get update -y
+apt-get install -y fontconfig openjdk-21-jre git docker.io curl gnupg ca-certificates snapd
+systemctl enable --now docker
+
+echo "==> Installing Node.js 22"
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+
+echo "==> Installing the AWS CLI"
+snap wait system seed.loaded
+snap install aws-cli --classic
+ln -sf /snap/bin/aws /usr/local/bin/aws
+
+echo "==> Installing Jenkins (2026 signing key)"
+mkdir -p /usr/share/keyrings
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key -o /usr/share/keyrings/jenkins-keyring.asc
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" > /etc/apt/sources.list.d/jenkins.list
+apt-get update -y
+apt-get install -y jenkins
+usermod -aG docker jenkins
+
+echo "==> Writing pipeline settings for the Jenkinsfile"
+mkdir -p /var/lib/jenkins/.aws
+cat > /var/lib/jenkins/.aws/config <<CONFIG
+[default]
+region = ${region}
+CONFIG
+cat > /var/lib/jenkins/cicd.env <<SETTINGS
+AWS_REGION=${region}
+ECR_REPO_URL=${ecr_repo_url}
+APP_INSTANCE_ID=${app_instance_id}
+APP_PRIVATE_IP=${app_private_ip}
+SETTINGS
+chown -R jenkins:jenkins /var/lib/jenkins/.aws /var/lib/jenkins/cicd.env
+
+systemctl enable jenkins
+systemctl restart jenkins
+
+echo "==> Waiting for the first-time admin password file"
+for i in $(seq 1 60); do
+  if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
+    break
+  fi
+  sleep 5
+done
+
+echo "==> Bootstrap complete"

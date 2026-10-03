@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dockside: tasks that ship</title>
+  <meta name="description" content="A small task tracker, built and deployed automatically by a Jenkins CI/CD pipeline on AWS.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E2433'/%3E%3Crect x='14' y='6' width='4' height='12' fill='%23EEF3F0'/%3E%3Cpath d='M7 21h18l-3 5H10z' fill='%23F0612E'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <a class="skip" href="#tasks">Skip to tasks</a>
+
+  <header class="top">
+    <span class="mark">Dockside</span>
+    <p class="health" id="health" role="status">Checking server</p>
+  </header>
+
+  <main class="layout">
+    <section class="hero">
+      <h1>What needs to ship today?</h1>
+      <form class="add" id="add-form" autocomplete="off">
+        <label class="sr" for="title">New task</label>
+        <input id="title" name="title" type="text" maxlength="200" required
+               placeholder="Write the release notes">
+        <button type="submit">Add task</button>
+      </form>
+      <p class="form-error" id="form-error" role="alert" hidden></p>
+    </section>
+
+    <section class="tasks" id="tasks" aria-labelledby="tasks-heading">
+      <div class="tasks-head">
+        <h2 id="tasks-heading">Your tasks</h2>
+        <div class="filters" role="group" aria-label="Filter tasks">
+          <button type="button" data-filter="open" aria-pressed="true">Open</button>
+          <button type="button" data-filter="done" aria-pressed="false">Done</button>
+          <button type="button" data-filter="all" aria-pressed="false">All</button>
+        </div>
+      </div>
+      <p class="summary" id="summary" aria-live="polite"></p>
+      <ul class="task-list" id="task-list"></ul>
+      <p class="empty" id="empty" hidden></p>
+    </section>
+
+    <aside class="ship" aria-labelledby="ship-heading">
+      <h2 id="ship-heading">How this page got here</h2>
+      <p class="ship-intro">
+        Every push to GitHub runs the tests, builds a container, scans it for
+        vulnerabilities and deploys it to this server. Nobody logs in to copy files.
+      </p>
+      <div class="stamp" id="stamp">
+        <span class="stamp-label">Build</span>
+        <span class="stamp-value" id="build">...</span>
+      </div>
+      <dl class="facts">
+        <div><dt>Commit</dt><dd id="commit">...</dd></div>
+        <div><dt>Built</dt><dd id="built">...</dd></div>
+        <div><dt>Server up for</dt><dd id="uptime">...</dd></div>
+        <div><dt>Runtime</dt><dd id="runtime">...</dd></div>
+      </dl>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    Built with Jenkins, Docker, AWS ECR and EC2, and Terraform.
+  </footer>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

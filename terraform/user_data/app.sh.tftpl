@@ -1,0 +1,23 @@
+#!/bin/bash
+# Bootstraps the app server on first boot. Log: /var/log/user-data.log
+set -euo pipefail
+exec > >(tee /var/log/user-data.log) 2>&1
+export DEBIAN_FRONTEND=noninteractive
+
+echo "==> Installing Docker and tools"
+apt-get update -y
+apt-get install -y docker.io curl snapd
+systemctl enable --now docker
+
+echo "==> Installing the AWS CLI"
+snap wait system seed.loaded
+snap install aws-cli --classic
+ln -sf /snap/bin/aws /usr/local/bin/aws
+
+echo "==> Installing the deploy script"
+mkdir -p /opt/cicd-app/data
+chown -R 1000:1000 /opt/cicd-app/data
+echo "${deploy_script_b64}" | base64 -d > /opt/cicd-app/deploy.sh
+chmod 755 /opt/cicd-app/deploy.sh
+
+echo "==> Bootstrap complete"
