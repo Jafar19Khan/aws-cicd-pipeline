@@ -9,7 +9,7 @@ Time needed: about 45 minutes, most of it waiting for servers to start.
 - A GitHub account and Git
 - Terraform 1.5 or newer: https://developer.hashicorp.com/terraform/install
 - The AWS CLI: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-- Node.js 20 or newer (only to run the project on your laptop)
+- Node.js 22.x (only to run the project on your laptop)
 
 Check the installs:
 
@@ -40,18 +40,18 @@ AWS Console -> EC2 -> Key Pairs -> **Create key pair**. Pick a name (for example
 `cicd-key`), type RSA, format `.pem`, and save the downloaded file somewhere safe.
 You will use the name in the next step.
 
-## 4. Put the project on GitHub
+## 4. Use the existing GitHub repository
 
-Create a **public** repository named `aws-cicd-pipeline` (without a README), then:
+This project is already associated with `https://github.com/Jafar19Khan/aws-cicd-pipeline`. If you are updating an existing local clone, do not run `git init` or add a second remote. First pull the latest `main` branch and review the changes you intend to commit. See [`UPDATE_EXISTING_GITHUB_REPO.md`](../UPDATE_EXISTING_GITHUB_REPO.md) for the safe update procedure.
+
+If you are setting it up on a new machine, clone the repository:
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/<Jafar19Khan>/aws-cicd-pipeline.git
-git push -u origin main
+git clone https://github.com/Jafar19Khan/aws-cicd-pipeline.git
+cd aws-cicd-pipeline
 ```
+
+GitHub Actions runs lint, tests, and a Docker build on pushes and pull requests. AWS deployment is performed by the Jenkins pipeline after it is configured.
 
 ## 5. Create the infrastructure
 
@@ -88,7 +88,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 
 Open `jenkins_url` in your browser, paste the password, choose **Install suggested
-plugins**, and create your admin user.
+plugins**, and create your admin user. Jenkins is exposed over HTTP in this demo; keep its security-group allowlist restricted to your trusted IP and do not reuse a weak password.
 
 ## 7. Create the pipeline job
 
@@ -131,10 +131,14 @@ terraform destroy
 ```
 
 Type `yes`. This deletes both servers, disks, the registry, roles and security groups.
-Afterwards, check the EC2 console for leftovers and look at the Billing page the next day.
+Afterwards, check the EC2, ECR, and VPC consoles for leftovers and review AWS Billing. Terraform destroy only removes resources tracked in the current Terraform state; it does not remove unrelated resources or resources created manually.
 
 ## Common mistakes
 
 - Using `curl` in Windows PowerShell for API tests: use `Invoke-RestMethod` or `curl.exe`.
 - Forgetting that your IP can change: Jenkins and SSH stop responding until you update `my_ip_cidr`.
 - Leaving the servers running after the demo: run `terraform destroy`.
+
+## Production hardening before real use
+
+This is a portfolio/demo deployment, not a production service. Before real traffic or sensitive data: configure HTTPS (for example ALB + ACM + DNS), application authentication/authorization, backups and recovery tests, centralized logs/alarms, remote Terraform state with locking, reviewed least-privilege policies, and a patching/rotation process. The app stores data in a JSON file on the EC2 instance; that is not a substitute for a managed database and tested backups.

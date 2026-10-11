@@ -21,6 +21,12 @@ start_container() {
   docker run -d \
     --name "$APP_NAME" \
     --restart unless-stopped \
+    --init \
+    --read-only \
+    --tmpfs /tmp:rw,noexec,nosuid,size=16m \
+    --cap-drop ALL \
+    --security-opt no-new-privileges:true \
+    --pids-limit 100 \
     -p 80:3000 \
     -v "$DATA_DIR:/data" \
     "$image" >/dev/null

@@ -9,3 +9,8 @@ Jenkinsfile
 test-results.xml
 *.tfstate*
 .terraform
+.github
+CONTRIBUTING.md
+SECURITY.md
+.editorconfig
+.gitattributes

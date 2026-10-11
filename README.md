@@ -25,7 +25,7 @@ flowchart LR
     APP -.->|health check fails| RB[Automatic rollback]
 ```
 
-1. **Lint and test**: syntax check and 15 automated tests (store, API, website serving).
+1. **Lint and test**: syntax check and automated tests (store, API, website serving); GitHub Actions runs these on pushes and pull requests.
 2. **Docker build**: the image is stamped with the build number and commit, which the
    website shows in its "How this page got here" panel.
 3. **Trivy scan**: the build fails if the image has a fixable CRITICAL vulnerability.
@@ -44,7 +44,7 @@ flowchart LR
 | CI/CD | Declarative `Jenkinsfile`, JUnit test reports, SCM polling |
 | Containers | `Dockerfile` with a non-root user and a health check |
 | Infrastructure | Terraform: 2 EC2 servers, ECR repository, IAM roles, security groups |
-| Security | IAM roles instead of access keys, IMDSv2 only, encrypted disks, image scanning, SSH and Jenkins limited to your IP |
+| Security | EC2 instance roles, IMDSv2, encrypted disks, Trivy image scanning, non-root/read-only container, app administration through SSM, Jenkins UI and SSH limited to your IP |
 
 ## Project structure
 
@@ -66,7 +66,7 @@ aws-cicd-pipeline/
 
 ## Run it on your laptop
 
-Requires Node.js 20 or newer.
+Requires Node.js 22.x.
 
 ```bash
 npm run lint
@@ -86,7 +86,7 @@ terraform apply
 ```
 
 Then open the Jenkins URL from the Terraform output, create one pipeline job that points
-at this repository, and push a change.
+at the existing GitHub repository, and push a change. See [docs/SETUP.md](docs/SETUP.md) for details.
 
 When you are done, remove everything with one command:
 
@@ -96,8 +96,8 @@ terraform destroy
 
 ## Try the rollback
 
-1. Add `throw new Error('demo crash');` as the first line of `src/server.js` and push.
-2. Lint, tests and the scan still pass, because the tests do not start `server.js`.
+1. On a temporary branch, introduce a controlled startup failure in `src/server.js` and push it. Do not use this on a shared/demo deployment.
+2. Prefer adding a dedicated test for the failure scenario; the regular tests validate API behavior but do not prove every runtime failure path.
 3. The new container crashes, the health check fails, and the deploy script restores the
    previous version. The build turns red, and **the website stays up**.
 
@@ -106,8 +106,12 @@ terraform destroy
 - Never commit `terraform.tfvars`, `*.tfstate` or `.pem` files. `.gitignore` excludes them.
 - Jenkins and SSH are reachable only from the IP address you set in `my_ip_cidr`. If your
   IP changes, update the variable and run `terraform apply`.
-- The website uses plain HTTP. For real use, put a load balancer with a TLS certificate in front.
+- The demo website uses plain HTTP on port 80 and has no user authentication; do not use it for sensitive or real customer data. For a public production deployment, put an HTTPS endpoint (for example an ALB with ACM) in front, add authentication/authorization, centralize logs/metrics, and configure remote Terraform state with locking and backups. The app server no longer exposes SSH; use AWS Systems Manager. Jenkins is still HTTP on port 8080 and should be restricted to a trusted network or placed behind TLS before extended use.
 - The app server and Jenkins server have public IPs that change if you stop and start them.
+
+## Validation boundaries
+
+Passing local tests and GitHub Actions does not prove that AWS resources, IAM permissions, Jenkins bootstrap, SSM registration, ECR access, or live deployment work in your account. Run `terraform plan`, inspect it, deploy in a controlled account, and verify the complete pipeline before describing it as end-to-end verified. Terraform currently uses local state by default; configure a dedicated S3 backend with state locking before team use.
 
 ## Cost
 

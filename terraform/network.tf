@@ -36,7 +36,7 @@ resource "aws_security_group" "jenkins" {
 
 resource "aws_security_group" "app" {
   name        = "${var.project_name}-app"
-  description = "App server: website for everyone, SSH from my IP"
+  description = "App server: public HTTP website; administration through AWS Systems Manager"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
@@ -47,13 +47,6 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description = "SSH from my IP"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.my_ip_cidr]
-  }
 
   egress {
     description = "All outbound traffic"

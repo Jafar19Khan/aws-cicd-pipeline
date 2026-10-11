@@ -34,9 +34,10 @@ resource "aws_instance" "app" {
   }
 
   root_block_device {
-    volume_size = var.app_volume_gb
-    volume_type = "gp3"
-    encrypted   = true
+    volume_size           = var.app_volume_gb
+    volume_type           = "gp3"
+    encrypted             = true
+    delete_on_termination = true
   }
 
   tags = {
@@ -67,9 +68,10 @@ resource "aws_instance" "jenkins" {
   }
 
   root_block_device {
-    volume_size = var.jenkins_volume_gb
-    volume_type = "gp3"
-    encrypted   = true
+    volume_size           = var.jenkins_volume_gb
+    volume_type           = "gp3"
+    encrypted             = true
+    delete_on_termination = true
   }
 
   tags = {

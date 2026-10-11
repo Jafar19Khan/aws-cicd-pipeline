@@ -2,6 +2,10 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+LABEL org.opencontainers.image.title="Dockside CI/CD Demo" \
+      org.opencontainers.image.description="Node.js task tracker for an AWS Jenkins, Docker, ECR and Terraform CI/CD portfolio project" \
+      org.opencontainers.image.source="https://github.com/Jafar19Khan/aws-cicd-pipeline"
+
 COPY package.json ./
 COPY src ./src
 COPY public ./public
